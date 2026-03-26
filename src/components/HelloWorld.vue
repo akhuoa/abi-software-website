@@ -35,20 +35,32 @@ async function fetchNpmPackages() {
   loading.value = true
   error.value = ''
   try {
-    // Fetch ABI-Software org packages from npmjs API
     const ORGANIZATION_NAME = 'abi-software'
-    // const npmApiUrl = `https://registry.npmjs.org/-/v1/search?text=scope:${ORGANIZATION_NAME}&size=100`
     const npmApiUrl = `https://registry.npmjs.org/-/org/${ORGANIZATION_NAME}/package`
-    const proxyBase = 'https://pmrapp-api-proxy.akya984.workers.dev/cors-proxy?'
-    // const proxyBase = 'http://localhost:8787/cors-proxy?' // Development proxy
+    const proxyBase = 'https://pmrapp-api-proxy.akya984.workers.dev/cors-proxy?' // to resolve CORS issues
     const proxyUrl = proxyBase + 'target=' + encodeURIComponent(npmApiUrl)
     const res = await fetch(proxyUrl)
     if (!res.ok) throw new Error('Failed to fetch from npmjs')
     const json = await res.json()
-    // Map each package to our display format
-    repos.value = json.objects.map((obj: any) => mapNpmPackage(obj.package))
-  } catch (e: any) {
-    error.value = e.message || 'Unknown error'
+    const packageNames = Object.keys(json)
+    // Fetch metadata for each package
+    const metaPromises = packageNames.map(async (packageName) => {
+      const metadataAPIUrl = `https://registry.npmjs.org/${packageName}/latest`
+      const metaProxyUrl = proxyBase + 'target=' + encodeURIComponent(metadataAPIUrl)
+      try {
+        const metaRes = await fetch(metaProxyUrl)
+        if (!metaRes.ok) throw new Error('meta fetch failed')
+        const meta = await metaRes.json()
+        return mapNpmPackage(meta)
+      } catch {
+        // fallback to minimal info if metadata fetch fails
+        return { name: packageName.replace('@abi-software/', ''), url: '', api: '', demo: '', npm: `https://www.npmjs.com/package/${packageName}`, description: '', version: '' }
+      }
+    })
+    repos.value = await Promise.all(metaPromises)
+  } catch (e) {
+    const err = e as Error
+    error.value = err.message || 'Unknown error'
     // fallback to data.json if fetch fails
     repos.value = data
   } finally {
