@@ -36,7 +36,13 @@ async function fetchNpmPackages() {
   error.value = ''
   try {
     // Fetch ABI-Software org packages from npmjs API
-    const res = await fetch('https://registry.npmjs.org/-/v1/search?text=scope:abi-software&size=100')
+    const ORGANIZATION_NAME = 'abi-software'
+    // const npmApiUrl = `https://registry.npmjs.org/-/v1/search?text=scope:${ORGANIZATION_NAME}&size=100`
+    const npmApiUrl = `https://registry.npmjs.org/-/org/${ORGANIZATION_NAME}/package`
+    const proxyBase = 'https://pmrapp-api-proxy.akya984.workers.dev/cors-proxy?'
+    // const proxyBase = 'http://localhost:8787/cors-proxy?' // Development proxy
+    const proxyUrl = proxyBase + 'target=' + encodeURIComponent(npmApiUrl)
+    const res = await fetch(proxyUrl)
     if (!res.ok) throw new Error('Failed to fetch from npmjs')
     const json = await res.json()
     // Map each package to our display format
