@@ -2,10 +2,12 @@
 import { computed, ref, onMounted } from 'vue'
 import data from '../data.json'
 
-defineProps<{ title: string }>()
+const props = defineProps<{
+  title: string
+  orgName?: string
+  pkgPrefix?: string
+}>()
 
-const ORGANIZATION_NAME = 'abi-software'
-const PACKAGE_PREFIX = '@abi-software/'
 const repos = ref([] as Array<any>)
 const search = ref('')
 const loading = ref(true)
@@ -14,7 +16,7 @@ const error = ref('')
 // Helper: Map npm package to repo info, fallback to data.json for extra fields
 function mapNpmPackage(pkg: any) {
   // Try to find extra info from data.json by name
-  const extra = data.find((d) => d.name.toLowerCase() === pkg.name.replace(PACKAGE_PREFIX, '').toLowerCase())
+  const extra = data.find((d) => d.name.toLowerCase() === pkg.name.replace(props.pkgPrefix, '').toLowerCase())
   // Try to extract repo URL from package info
   let repoUrl = ''
   if (pkg.links && pkg.links.repository) {
@@ -23,7 +25,7 @@ function mapNpmPackage(pkg: any) {
     repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
   }
   return {
-    name: pkg.name.replace(PACKAGE_PREFIX, ''),
+    name: pkg.name.replace(props.pkgPrefix, ''),
     url: extra?.url || repoUrl || '',
     api: extra?.api || '',
     demo: extra?.demo || '',
@@ -37,7 +39,7 @@ async function fetchNpmPackages() {
   loading.value = true
   error.value = ''
   try {
-    const npmApiUrl = `https://registry.npmjs.org/-/org/${ORGANIZATION_NAME}/package`
+    const npmApiUrl = `https://registry.npmjs.org/-/org/${props.orgName}/package`
     const proxyBase = 'https://pmrapp-api-proxy.akya984.workers.dev/cors-proxy?' // to resolve CORS issues
     const proxyUrl = proxyBase + 'target=' + encodeURIComponent(npmApiUrl)
     const res = await fetch(proxyUrl)
@@ -55,7 +57,15 @@ async function fetchNpmPackages() {
         return mapNpmPackage(meta)
       } catch {
         // fallback to minimal info if metadata fetch fails
-        return { name: packageName.replace(PACKAGE_PREFIX, ''), url: '', api: '', demo: '', npm: `https://www.npmjs.com/package/${packageName}`, description: '', version: '' }
+        return {
+          name: packageName.replace(props.pkgPrefix || '', ''),
+          url: '',
+          api: '',
+          demo: '',
+          npm: `https://www.npmjs.com/package/${packageName}`,
+          description: '',
+          version: '',
+        }
       }
     })
     repos.value = await Promise.all(metaPromises)

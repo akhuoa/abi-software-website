@@ -8,7 +8,7 @@ import HelloWorld from './components/HelloWorld.vue'
       <img src="./assets/logo.svg" class="logo" alt="logo" />
     </a>
   </div>
-  <HelloWorld title="ABI Software" />
+  <HelloWorld title="ABI Software" orgName="abi-software" pkgPrefix="@abi-software/" />
 </template>
 
 <style scoped>
