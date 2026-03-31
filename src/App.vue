@@ -3,22 +3,38 @@ import HelloWorld from './components/HelloWorld.vue'
 </script>
 
 <template>
-  <div>
-    <a href="https://github.com/abi-software">
-      <img src="./assets/logo.svg" class="logo" alt="logo" />
+  <div class="logo-container">
+    <a href="https://github.com/abi-software" class="logo">
+      <img src="./assets/logo.svg" alt="logo" width="60" height="60" />
+      <h1>ABI Software</h1>
     </a>
   </div>
-  <HelloWorld title="ABI Software" orgName="abi-software" pkgPrefix="@abi-software/" />
+  <HelloWorld orgName="abi-software" pkgPrefix="@abi-software/" />
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.logo-container {
+  margin-bottom: 2rem;
 }
-.logo:hover {
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 1rem;
+}
+
+.logo img {
+  will-change: filter;
+  transition: filter 0.3s ease;
+}
+
+.logo:hover img {
   filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo h1 {
+  margin: 0;
+  color: #646cff;
 }
 </style>

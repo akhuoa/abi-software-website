@@ -3,7 +3,6 @@ import { computed, ref, onMounted } from 'vue'
 import data from '../data.json'
 
 const props = defineProps<{
-  title: string
   orgName?: string
   pkgPrefix?: string
 }>()
@@ -91,8 +90,6 @@ const filteredRepos = computed(() => {
 </script>
 
 <template>
-  <h1>{{ title }}</h1>
-
   <label class="search-box">
     Search:
     <input type="text" v-model="search" />
