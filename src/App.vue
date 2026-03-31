@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import PackageDirectory from './components/PackageDirectory.vue'
 </script>
 
 <template>
@@ -9,7 +9,7 @@ import HelloWorld from './components/HelloWorld.vue'
       <h1>ABI Software</h1>
     </a>
   </div>
-  <HelloWorld orgName="abi-software" pkgPrefix="@abi-software/" />
+  <PackageDirectory orgName="abi-software" pkgPrefix="@abi-software/" />
 </template>
 
 <style scoped>
