@@ -262,7 +262,14 @@ const filteredRepos = computed(() => {
         <span class="meta-separator">|</span>
         <span><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</span>
       </p>
-      <p v-if="repo.description">{{ repo.description }}</p>
+      <div v-if="repo.description" class="card-description">
+        {{ repo.description }}
+      </div>
+
+      <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme(repo)">
+        View README
+      </button>
+
       <div v-if="repo.keywords.length" class="meta-block">
         <strong>Keywords:</strong>
         <div class="keyword-list">
@@ -278,18 +285,56 @@ const filteredRepos = computed(() => {
           </template>
         </span>
       </div>
-      <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme(repo)">View README</button>
-      <p>
-        <a v-if="repo.url" :href="repo.url" target="_blank" rel="noopener">GitHub repo</a>
-        <span v-else>No GitHub repo</span>
-      </p>
-      <p v-if="repo.api">
-        <a :href="repo.api" target="_blank" rel="noopener">API documentation</a>
-      </p>
-      <p>
-        <a :href="repo.npm" target="_blank" rel="noopener">NPM package</a>
-      </p>
-      <p>
+
+      <div class="action-row">
+        <a
+          v-if="repo.url"
+          class="action-button github"
+          :href="repo.url"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.75-1.33-1.75-1.08-.75.08-.74.08-.74 1.2.08 1.83 1.22 1.83 1.22 1.06 1.8 2.79 1.28 3.47.98.11-.76.41-1.28.74-1.57-2.67-.3-5.47-1.32-5.47-5.87 0-1.29.46-2.34 1.22-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.62 11.62 0 0 1 6.01 0c2.3-1.53 3.3-1.21 3.3-1.21.65 1.64.24 2.86.12 3.16.76.83 1.22 1.88 1.22 3.17 0 4.56-2.8 5.57-5.48 5.87.42.36.8 1.08.8 2.18v3.23c0 .32.22.69.82.58A12 12 0 0 0 12 .5Z"
+            />
+          </svg>
+          GitHub
+        </a>
+
+        <a
+          v-if="repo.api"
+          class="action-button api"
+          :href="repo.api"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM8 13h8v1.5H8zm0 3h8v1.5H8zm0-6h5v1.5H8z"
+            />
+          </svg>
+          API Docs
+        </a>
+
+        <a
+          class="action-button npm"
+          :href="repo.npm"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M2 7.5v9h20v-9zm1.5 1.5h17v6h-2.5v-4.5h-4v4.5H9.5v-4.5h-4v4.5H3.5Z"
+            />
+          </svg>
+          NPM
+        </a>
+      </div>
+      <p class="card-meta-line license">
         <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
       </p>
     </div>
@@ -336,6 +381,9 @@ const filteredRepos = computed(() => {
 .card {
   width: auto;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 1rem;
@@ -346,6 +394,13 @@ const filteredRepos = computed(() => {
     margin-top: 0;
     color: #333;
   }
+
+  p {
+    margin: 0;
+  }
+}
+.card-description {
+  margin: 0.75rem 0;
 }
 .meta-block {
   margin-bottom: 0.75rem;
@@ -382,9 +437,53 @@ const filteredRepos = computed(() => {
   color: #646cff;
   background: #fff;
   border-radius: 6px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.35rem 0.6rem;
   cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: none;
+  margin: 0.75rem 0;
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+}
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #d5d5d5;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.action-button.github {
+  color: #24292f;
+  background: #f6f8fa;
+}
+.action-button.api {
+  color: #0056d6;
+  background: #eef4ff;
+}
+.action-button.npm {
+  color: #b51f2d;
+  background: #fff1f2;
+}
+.action-button:hover {
+  border-color: #b9b9b9;
+}
+.action-button.disabled {
+  color: #888;
+  background: #f7f7f7;
+  border-color: #e1e1e1;
+}
+.action-icon {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 .lightbox {
   position: fixed;
@@ -444,11 +543,11 @@ const filteredRepos = computed(() => {
 .loading {
   color: #555;
   font-style: italic;
-  margin: 1em 0;
+  margin: 2rem;
 }
 .error {
   color: #c00;
   font-weight: bold;
-  margin: 1em 0;
+  margin: 2rem;
 }
 </style>
