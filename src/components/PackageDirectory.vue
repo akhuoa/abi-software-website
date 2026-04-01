@@ -225,9 +225,12 @@ const filteredRepos = computed(() => {
   <div class="cards-container">
     <div class="card" v-for="repo in filteredRepos" :key="repo.name">
       <h3>{{ repo.name }}</h3>
+      <p class="card-meta-line">
+        <span><strong>v</strong> {{ repo.version || 'Unknown' }}</span>
+        <span class="meta-separator">|</span>
+        <span><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</span>
+      </p>
       <p v-if="repo.description">{{ repo.description }}</p>
-      <p v-if="repo.version"><strong>Version:</strong> {{ repo.version }}</p>
-      <p><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</p>
       <div v-if="repo.keywords.length" class="meta-block">
         <strong>Keywords:</strong>
         <div class="keyword-list">
@@ -311,6 +314,17 @@ const filteredRepos = computed(() => {
 }
 .meta-block {
   margin-bottom: 0.75rem;
+}
+.card-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: -0.2rem 0 0.75rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+.meta-separator {
+  color: #aaa;
 }
 .keyword-list {
   display: flex;
