@@ -88,7 +88,7 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     api: extra?.api || '',
     demo: extra?.demo || '',
     npm: `https://www.npmjs.com/package/${packageName}`,
-    description: packageInfo.description || '',
+    description: cleanDescription(packageInfo.description || ''),
     version: latestVersion || packageInfo.version || '',
     license: packageInfo.license || pkg.license || '',
     updatedAt: pkg.time?.modified || '',
@@ -121,6 +121,32 @@ function openReadme(repo: Repo) {
 
 function closeReadme() {
   activeReadmeRepo.value = null
+}
+
+function cleanDescription(rawDescription: string) {
+  if (!rawDescription) {
+    return ''
+  }
+
+  let cleaned = rawDescription.trimStart()
+
+  // Remove leading badge blocks repeatedly (handles multiple badges on one line,
+  // separate lines, and partially malformed badge markdown from registry data).
+  for (let i = 0; i < 10; i += 1) {
+    const before = cleaned
+
+    cleaned = cleaned.replace(/^\s*\[!\[[\s\S]*?\]\([\s\S]*?\)\]\([\s\S]*?(?:\)|$)\s*/i, '')
+    cleaned = cleaned.replace(/^\s*!\[[\s\S]*?\]\([\s\S]*?(?:\)|$)\s*/i, '')
+    cleaned = cleaned.replace(/^\s*<a[^>]*>\s*<img[\s\S]*?<\/a>\s*/i, '')
+    cleaned = cleaned.replace(/^\s*<img[^>]*>\s*/i, '')
+    cleaned = cleaned.replace(/^\s*\[[^\]]+\]:\s*\S+\s*/i, '')
+
+    if (cleaned === before) {
+      break
+    }
+  }
+
+  return cleaned.trim()
 }
 
 function formatUpdatedAt(updatedAt: string) {
