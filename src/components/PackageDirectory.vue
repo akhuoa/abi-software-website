@@ -338,6 +338,10 @@ const filteredRepos = computed(() => {
         <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
       </p>
     </div>
+
+    <div v-if="!filteredRepos.length" class="empty-state">
+      <p>No packages found matching your search criteria.</p>
+    </div>
   </div>
 
   <div v-if="activeReadmeRepo" class="lightbox" @click.self="closeReadme">
@@ -549,5 +553,16 @@ const filteredRepos = computed(() => {
   color: #c00;
   font-weight: bold;
   margin: 2rem;
+}
+.empty-state {
+  color: #555;
+  font-style: italic;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  padding: 1rem;
+
+  p {
+    margin: 0;
+  }
 }
 </style>
