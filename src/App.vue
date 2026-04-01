@@ -10,11 +10,15 @@ import PackageDirectory from './components/PackageDirectory.vue'
     </a>
   </div>
   <PackageDirectory orgName="abi-software" pkgPrefix="@abi-software/" />
+  <div class="read-the-docs">The collection of useful links.</div>
 </template>
 
 <style scoped>
 .logo-container {
+  padding: 2rem;
   margin-bottom: 2rem;
+  text-align: center;
+  background-color: #646cff26;
 }
 
 .logo {
@@ -36,5 +40,11 @@ import PackageDirectory from './components/PackageDirectory.vue'
 .logo h1 {
   margin: 0;
   color: #646cff;
+}
+
+.read-the-docs {
+  color: #888;
+  padding: 2rem;
+  text-align: center;
 }
 </style>

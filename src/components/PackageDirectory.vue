@@ -208,8 +208,6 @@ const filteredRepos = computed(() => {
       </p>
     </div>
   </div>
-
-  <p class="read-the-docs">The collection of useful links.</p>
 </template>
 
 <style scoped>
@@ -219,7 +217,8 @@ const filteredRepos = computed(() => {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
 
   h2 {
     margin: 0;
@@ -236,6 +235,7 @@ const filteredRepos = computed(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: 1rem;
+  padding: 2rem;
 }
 .card {
   width: auto;
@@ -244,6 +244,7 @@ const filteredRepos = computed(() => {
   border-radius: 8px;
   padding: 1rem;
   text-align: left;
+  overflow: hidden;
 }
 .search-input,
 .sort-select {
@@ -259,9 +260,6 @@ const filteredRepos = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-}
-.read-the-docs {
-  color: #888;
 }
 .loading {
   color: #555;
