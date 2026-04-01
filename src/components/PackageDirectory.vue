@@ -239,7 +239,7 @@ const filteredRepos = computed(() => {
     <div class="toolbar-controls">
       <label class="search-box">
         Search:
-        <input type="text" v-model="search" name="search" class="search-input" />
+        <input type="search" v-model="search" name="search" class="search-input" />
       </label>
       <label class="sort-box">
         Sort:
