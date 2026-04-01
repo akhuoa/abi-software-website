@@ -24,7 +24,7 @@ function mapNpmPackage(pkg: any) {
     repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
   }
   return {
-    name: pkg.name.replace(props.pkgPrefix, ''),
+    name: pkg.name,
     url: extra?.url || repoUrl || '',
     api: extra?.api || '',
     demo: extra?.demo || '',
@@ -57,7 +57,7 @@ async function fetchNpmPackages() {
       } catch {
         // fallback to minimal info if metadata fetch fails
         return {
-          name: packageName.replace(props.pkgPrefix || '', ''),
+          name: packageName,
           url: '',
           api: '',
           demo: '',
@@ -90,10 +90,13 @@ const filteredRepos = computed(() => {
 </script>
 
 <template>
-  <label class="search-box">
-    Search:
-    <input type="text" v-model="search" />
-  </label>
+  <div class="page-header">
+    <h2>NPM Packages</h2>
+    <label class="search-box">
+      Search:
+      <input type="text" v-model="search" name="search" class="search-input" />
+    </label>
+  </div>
 
   <div v-if="loading" class="loading">Loading packages...</div>
   <div v-else-if="error" class="error">{{ error }}</div>
@@ -120,6 +123,34 @@ const filteredRepos = computed(() => {
 </template>
 
 <style scoped>
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    color: #646cff;
+  }
+}
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+}
+.card {
+  width: auto;
+  height: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: left;
+}
+.search-input {
+  border-color: #ddd;
+}
 .read-the-docs {
   color: #888;
 }
