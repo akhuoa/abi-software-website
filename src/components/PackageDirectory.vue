@@ -2,36 +2,103 @@
 import { computed, ref, onMounted } from 'vue'
 import data from '../data.json'
 
+type Repo = {
+  name: string
+  url: string
+  api: string
+  demo: string
+  npm: string
+  description: string
+  version: string
+  updatedAt: string
+}
+
+type NpmPackageVersion = {
+  name?: string
+  description?: string
+  version?: string
+  links?: {
+    repository?: string
+  }
+  repository?: {
+    url?: string
+  }
+}
+
+type NpmPackageMetadata = {
+  name?: string
+  time?: {
+    modified?: string
+  }
+  versions?: Record<string, NpmPackageVersion>
+  'dist-tags'?: {
+    latest?: string
+  }
+}
+
 const props = defineProps<{
   orgName?: string
   pkgPrefix?: string
 }>()
 
-const repos = ref([] as Array<any>)
+const repos = ref<Repo[]>([])
 const search = ref('')
+const sortBy = ref<'updated' | 'name'>('updated')
 const loading = ref(true)
 const error = ref('')
 
 // Helper: Map npm package to repo info, fallback to data.json for extra fields
-function mapNpmPackage(pkg: any) {
+function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
+  const latestVersion = pkg['dist-tags']?.latest
+  const latestPackage = latestVersion ? pkg.versions?.[latestVersion] : undefined
+  const packageInfo = latestPackage || {}
+  const packageName = packageInfo.name || pkg.name || ''
+
   // Try to find extra info from data.json by name
-  const extra = data.find((d) => d.name.toLowerCase() === pkg.name.replace(props.pkgPrefix, '').toLowerCase())
+  const extra = data.find((d) => d.name.toLowerCase() === packageName.replace(props.pkgPrefix || '', '').toLowerCase())
   // Try to extract repo URL from package info
   let repoUrl = ''
-  if (pkg.links && pkg.links.repository) {
-    repoUrl = pkg.links.repository
-  } else if (pkg.repository && pkg.repository.url) {
-    repoUrl = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
+  if (packageInfo.links?.repository) {
+    repoUrl = packageInfo.links.repository
+  } else if (packageInfo.repository?.url) {
+    repoUrl = packageInfo.repository.url.replace(/^git\+/, '').replace(/\.git$/, '')
   }
+
   return {
-    name: pkg.name,
+    name: packageName,
     url: extra?.url || repoUrl || '',
     api: extra?.api || '',
     demo: extra?.demo || '',
-    npm: `https://www.npmjs.com/package/${pkg.name}`,
-    description: pkg.description || '',
-    version: pkg.version || '',
+    npm: `https://www.npmjs.com/package/${packageName}`,
+    description: packageInfo.description || '',
+    version: latestVersion || packageInfo.version || '',
+    updatedAt: pkg.time?.modified || '',
   }
+}
+
+function buildFallbackRepo(packageName: string): Repo {
+  return {
+    name: packageName,
+    url: '',
+    api: '',
+    demo: '',
+    npm: `https://www.npmjs.com/package/${packageName}`,
+    description: '',
+    version: '',
+    updatedAt: '',
+  }
+}
+
+function formatUpdatedAt(updatedAt: string) {
+  if (!updatedAt) {
+    return 'Unknown'
+  }
+
+  return new Intl.DateTimeFormat('en-NZ', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(updatedAt))
 }
 
 async function fetchNpmPackages() {
@@ -47,24 +114,16 @@ async function fetchNpmPackages() {
     const packageNames = Object.keys(json)
     // Fetch metadata for each package
     const metaPromises = packageNames.map(async (packageName) => {
-      const metadataAPIUrl = `https://registry.npmjs.org/${packageName}/latest`
+      const metadataAPIUrl = `https://registry.npmjs.org/${packageName}`
       const metaProxyUrl = proxyBase + 'target=' + encodeURIComponent(metadataAPIUrl)
       try {
         const metaRes = await fetch(metaProxyUrl)
         if (!metaRes.ok) throw new Error('meta fetch failed')
-        const meta = await metaRes.json()
+        const meta = await metaRes.json() as NpmPackageMetadata
         return mapNpmPackage(meta)
       } catch {
         // fallback to minimal info if metadata fetch fails
-        return {
-          name: packageName,
-          url: '',
-          api: '',
-          demo: '',
-          npm: `https://www.npmjs.com/package/${packageName}`,
-          description: '',
-          version: '',
-        }
+        return buildFallbackRepo(packageName)
       }
     })
     repos.value = await Promise.all(metaPromises)
@@ -72,7 +131,13 @@ async function fetchNpmPackages() {
     const err = e as Error
     error.value = err.message || 'Unknown error'
     // fallback to data.json if fetch fails
-    repos.value = data
+    repos.value = data.map((repo) => ({
+      ...repo,
+      description: '',
+      version: '',
+      updatedAt: '',
+      npm: `https://www.npmjs.com/package/${repo.name}`,
+    }))
   } finally {
     loading.value = false
   }
@@ -83,19 +148,43 @@ onMounted(() => {
 })
 
 const filteredRepos = computed(() => {
-  return repos.value.filter((repo) =>
+  const filtered = repos.value.filter((repo) =>
     repo.name.toLowerCase().includes(search.value.toLowerCase())
   )
+
+  return [...filtered].sort((left: Repo, right: Repo) => {
+    if (sortBy.value === 'name') {
+      return left.name.localeCompare(right.name)
+    }
+
+    const leftTime = left.updatedAt ? new Date(left.updatedAt).getTime() : 0
+    const rightTime = right.updatedAt ? new Date(right.updatedAt).getTime() : 0
+
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime
+    }
+
+    return left.name.localeCompare(right.name)
+  })
 })
 </script>
 
 <template>
   <div class="page-header">
     <h2>NPM Packages</h2>
-    <label class="search-box">
-      Search:
-      <input type="text" v-model="search" name="search" class="search-input" />
-    </label>
+    <div class="toolbar-controls">
+      <label class="search-box">
+        Search:
+        <input type="text" v-model="search" name="search" class="search-input" />
+      </label>
+      <label class="sort-box">
+        Sort:
+        <select v-model="sortBy" name="sort" class="sort-select">
+          <option value="updated">Latest updated</option>
+          <option value="name">Name</option>
+        </select>
+      </label>
+    </div>
   </div>
 
   <div v-if="loading" class="loading">Loading packages...</div>
@@ -106,6 +195,7 @@ const filteredRepos = computed(() => {
       <h3>{{ repo.name }}</h3>
       <p v-if="repo.description">{{ repo.description }}</p>
       <p v-if="repo.version"><strong>Version:</strong> {{ repo.version }}</p>
+      <p><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</p>
       <p>
         <a v-if="repo.url" :href="repo.url" target="_blank" rel="noopener">GitHub repo</a>
         <span v-else>No GitHub repo</span>
@@ -128,12 +218,19 @@ const filteredRepos = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
   margin-bottom: 1rem;
 
   h2 {
     margin: 0;
     color: #646cff;
   }
+}
+.toolbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 .cards-container {
   display: grid;
@@ -150,6 +247,15 @@ const filteredRepos = computed(() => {
 }
 .search-input {
   border-color: #ddd;
+}
+.sort-select {
+  border-color: #ddd;
+}
+.search-box,
+.sort-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .read-the-docs {
   color: #888;
