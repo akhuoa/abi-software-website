@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import DOMPurify from 'dompurify'
+import MarkdownIt from 'markdown-it'
 import data from '../data.json'
+
+const markdownRenderer = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
 
 type Repo = {
   name: string
@@ -231,6 +239,14 @@ const filteredRepos = computed(() => {
     return left.name.localeCompare(right.name)
   })
 })
+
+const activeReadmeHtml = computed(() => {
+  if (!activeReadmeRepo.value?.readme) {
+    return ''
+  }
+
+  return DOMPurify.sanitize(markdownRenderer.render(activeReadmeRepo.value.readme))
+})
 </script>
 
 <template>
@@ -339,7 +355,7 @@ const filteredRepos = computed(() => {
       </p>
     </div>
 
-    <div v-if="!filteredRepos.length" class="empty-state">
+    <div v-if="!loading && !error && !filteredRepos.length" class="empty-state">
       <p>No packages found matching your search criteria.</p>
     </div>
   </div>
@@ -350,7 +366,7 @@ const filteredRepos = computed(() => {
         <h3>{{ activeReadmeRepo.name }} README</h3>
         <button type="button" class="lightbox-close" @click="closeReadme">Close</button>
       </div>
-      <pre class="readme-markdown">{{ activeReadmeRepo.readme }}</pre>
+      <div class="readme-markdown" v-html="activeReadmeHtml"></div>
     </div>
   </div>
 </template>
@@ -525,9 +541,93 @@ const filteredRepos = computed(() => {
 .readme-markdown {
   margin: 0;
   text-align: left;
-  white-space: pre-wrap;
-  word-break: break-word;
   line-height: 1.4;
+}
+.readme-markdown :deep(h1),
+.readme-markdown :deep(h2),
+.readme-markdown :deep(h3),
+.readme-markdown :deep(h4),
+.readme-markdown :deep(h5),
+.readme-markdown :deep(h6) {
+  margin: 1.25rem 0 0.75rem;
+  line-height: 1.2;
+}
+.readme-markdown :deep(h1) {
+  font-size: 1.75rem;
+}
+.readme-markdown :deep(h2) {
+  font-size: 1.4rem;
+}
+.readme-markdown :deep(h3) {
+  font-size: 1.15rem;
+}
+.readme-markdown :deep(h1:first-child),
+.readme-markdown :deep(h2:first-child),
+.readme-markdown :deep(h3:first-child) {
+  margin-top: 0;
+}
+.readme-markdown :deep(p),
+.readme-markdown :deep(ul),
+.readme-markdown :deep(ol),
+.readme-markdown :deep(blockquote) {
+  margin: 0 0 1rem;
+}
+.readme-markdown :deep(ul),
+.readme-markdown :deep(ol) {
+  padding-left: 1.5rem;
+}
+.readme-markdown :deep(li + li) {
+  margin-top: 0.25rem;
+}
+.readme-markdown :deep(a) {
+  color: #0056d6;
+  text-decoration: underline;
+  word-break: break-word;
+}
+.readme-markdown :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 0.9em;
+  background: #f5f6f8;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+}
+.readme-markdown :deep(pre) {
+  overflow-x: auto;
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0 0 1rem;
+}
+.readme-markdown :deep(pre code) {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.readme-markdown :deep(blockquote) {
+  border-left: 3px solid #d5d9e0;
+  padding-left: 1rem;
+  color: #4b5563;
+}
+.readme-markdown :deep(hr) {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.25rem 0;
+}
+.readme-markdown :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1rem;
+}
+.readme-markdown :deep(th),
+.readme-markdown :deep(td) {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.readme-markdown :deep(img) {
+  max-width: 100%;
+  height: auto;
 }
 .search-input,
 .sort-select {
