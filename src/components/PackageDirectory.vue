@@ -366,7 +366,9 @@ const activeReadmeHtml = computed(() => {
         <h3>{{ activeReadmeRepo.name }} README</h3>
         <button type="button" class="lightbox-close" @click="closeReadme">Close</button>
       </div>
-      <div class="readme-markdown" v-html="activeReadmeHtml"></div>
+      <div class="lightbox-body">
+        <div class="readme-markdown" v-html="activeReadmeHtml"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -517,8 +519,7 @@ const activeReadmeHtml = computed(() => {
 }
 .lightbox-content {
   width: min(900px, 100%);
-  max-height: min(80vh, 900px);
-  overflow: auto;
+  overflow: hidden;
   background: #fff;
   border-radius: 10px;
   border: 1px solid #ddd;
@@ -530,6 +531,15 @@ const activeReadmeHtml = computed(() => {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.75rem;
+}
+.lightbox-body {
+  width: 100%;
+  max-height: min(80vh, 900px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  padding: 1rem;
 }
 .lightbox-close {
   border: 1px solid #ddd;
@@ -593,7 +603,7 @@ const activeReadmeHtml = computed(() => {
 }
 .readme-markdown :deep(pre) {
   overflow-x: auto;
-  background: #111827;
+  background: #2c3344;
   color: #f9fafb;
   border-radius: 8px;
   padding: 1rem;
