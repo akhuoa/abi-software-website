@@ -240,6 +240,14 @@ const filteredRepos = computed(() => {
   })
 })
 
+const descriptionMarkdownHTML = ((descriptionMarkdown: string): string => {
+  if (!descriptionMarkdown) {
+    return ''
+  }
+
+  return DOMPurify.sanitize(markdownRenderer.render(descriptionMarkdown))
+})
+
 const activeReadmeHtml = computed(() => {
   if (!activeReadmeRepo.value?.readme) {
     return ''
@@ -279,7 +287,7 @@ const activeReadmeHtml = computed(() => {
         <span><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</span>
       </p>
       <div v-if="repo.description" class="card-description">
-        {{ repo.description }}
+        <div class="readme-markdown" v-html="descriptionMarkdownHTML(repo.description)"></div>
       </div>
 
       <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme(repo)">
