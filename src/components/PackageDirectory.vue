@@ -280,7 +280,7 @@ const filteredRepos = computed(() => {
         <strong>Maintainers:</strong>
         <span class="maintainer-links">
           <template v-for="(maintainer, index) in repo.maintainers" :key="`${maintainer.name || 'unknown'}-${maintainer.email || ''}`">
-            <a :href="`mailto:${maintainer.email || ''}`">{{ maintainer.name || maintainer.email || 'Unknown' }}</a>
+            <a :href="`https://www.npmjs.com/~${maintainer.name || ''}`" target="_blank">{{ maintainer.name || maintainer.email || 'Unknown' }}</a>
             <span v-if="index < repo.maintainers.length - 1">, </span>
           </template>
         </span>
