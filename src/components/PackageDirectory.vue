@@ -11,12 +11,23 @@ type Repo = {
   description: string
   version: string
   updatedAt: string
+  keywords: string[]
+  maintainers: Maintainer[]
+  readme: string
+}
+
+type Maintainer = {
+  name?: string
+  email?: string
 }
 
 type NpmPackageVersion = {
   name?: string
   description?: string
   version?: string
+  keywords?: string[]
+  maintainers?: Maintainer[]
+  readme?: string
   links?: {
     repository?: string
   }
@@ -27,6 +38,9 @@ type NpmPackageVersion = {
 
 type NpmPackageMetadata = {
   name?: string
+  keywords?: string[]
+  maintainers?: Maintainer[]
+  readme?: string
   time?: {
     modified?: string
   }
@@ -44,6 +58,7 @@ const props = defineProps<{
 const repos = ref<Repo[]>([])
 const search = ref('')
 const sortBy = ref<'updated' | 'name'>('updated')
+const activeReadmeRepo = ref<Repo | null>(null)
 const loading = ref(true)
 const error = ref('')
 
@@ -73,6 +88,9 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     description: packageInfo.description || '',
     version: latestVersion || packageInfo.version || '',
     updatedAt: pkg.time?.modified || '',
+    keywords: packageInfo.keywords || pkg.keywords || [],
+    maintainers: packageInfo.maintainers || pkg.maintainers || [],
+    readme: packageInfo.readme || pkg.readme || '',
   }
 }
 
@@ -86,7 +104,18 @@ function buildFallbackRepo(packageName: string): Repo {
     description: '',
     version: '',
     updatedAt: '',
+    keywords: [],
+    maintainers: [],
+    readme: '',
   }
+}
+
+function openReadme(repo: Repo) {
+  activeReadmeRepo.value = repo
+}
+
+function closeReadme() {
+  activeReadmeRepo.value = null
 }
 
 function formatUpdatedAt(updatedAt: string) {
@@ -136,6 +165,9 @@ async function fetchNpmPackages() {
       description: '',
       version: '',
       updatedAt: '',
+      keywords: [],
+      maintainers: [],
+      readme: '',
       npm: `https://www.npmjs.com/package/${repo.name}`,
     }))
   } finally {
@@ -196,6 +228,22 @@ const filteredRepos = computed(() => {
       <p v-if="repo.description">{{ repo.description }}</p>
       <p v-if="repo.version"><strong>Version:</strong> {{ repo.version }}</p>
       <p><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</p>
+      <div v-if="repo.keywords.length" class="meta-block">
+        <strong>Keywords:</strong>
+        <div class="keyword-list">
+          <span class="keyword-chip" v-for="keyword in repo.keywords" :key="keyword">{{ keyword }}</span>
+        </div>
+      </div>
+      <div v-if="repo.maintainers.length" class="meta-block">
+        <strong>Maintainers:</strong>
+        <span class="maintainer-links">
+          <template v-for="(maintainer, index) in repo.maintainers" :key="`${maintainer.name || 'unknown'}-${maintainer.email || ''}`">
+            <a :href="`mailto:${maintainer.email || ''}`">{{ maintainer.name || maintainer.email || 'Unknown' }}</a>
+            <span v-if="index < repo.maintainers.length - 1">, </span>
+          </template>
+        </span>
+      </div>
+      <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme(repo)">View README</button>
       <p>
         <a v-if="repo.url" :href="repo.url" target="_blank" rel="noopener">GitHub repo</a>
         <span v-else>No GitHub repo</span>
@@ -206,6 +254,16 @@ const filteredRepos = computed(() => {
       <p>
         <a :href="repo.npm" target="_blank" rel="noopener">NPM package</a>
       </p>
+    </div>
+  </div>
+
+  <div v-if="activeReadmeRepo" class="lightbox" @click.self="closeReadme">
+    <div class="lightbox-content" role="dialog" aria-modal="true" aria-label="Package README">
+      <div class="lightbox-header">
+        <h3>{{ activeReadmeRepo.name }} README</h3>
+        <button type="button" class="lightbox-close" @click="closeReadme">Close</button>
+      </div>
+      <pre class="readme-markdown">{{ activeReadmeRepo.readme }}</pre>
     </div>
   </div>
 </template>
@@ -245,6 +303,79 @@ const filteredRepos = computed(() => {
   padding: 1rem;
   text-align: left;
   overflow: hidden;
+
+  h3 {
+    margin-top: 0;
+    color: #333;
+  }
+}
+.meta-block {
+  margin-bottom: 0.75rem;
+}
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.keyword-chip {
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.maintainer-links {
+  margin-left: 0.35rem;
+}
+.readme-button {
+  border: 1px solid #646cff;
+  color: #646cff;
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+.lightbox-content {
+  width: min(900px, 100%);
+  max-height: min(80vh, 900px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  padding: 1rem;
+}
+.lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.lightbox-close {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+}
+.readme-markdown {
+  margin: 0;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
 }
 .search-input,
 .sort-select {
