@@ -10,6 +10,7 @@ type Repo = {
   npm: string
   description: string
   version: string
+  license: string
   updatedAt: string
   keywords: string[]
   maintainers: Maintainer[]
@@ -25,6 +26,7 @@ type NpmPackageVersion = {
   name?: string
   description?: string
   version?: string
+  license?: string
   keywords?: string[]
   maintainers?: Maintainer[]
   readme?: string
@@ -38,6 +40,7 @@ type NpmPackageVersion = {
 
 type NpmPackageMetadata = {
   name?: string
+  license?: string
   keywords?: string[]
   maintainers?: Maintainer[]
   readme?: string
@@ -87,6 +90,7 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     npm: `https://www.npmjs.com/package/${packageName}`,
     description: packageInfo.description || '',
     version: latestVersion || packageInfo.version || '',
+    license: packageInfo.license || pkg.license || '',
     updatedAt: pkg.time?.modified || '',
     keywords: packageInfo.keywords || pkg.keywords || [],
     maintainers: packageInfo.maintainers || pkg.maintainers || [],
@@ -103,6 +107,7 @@ function buildFallbackRepo(packageName: string): Repo {
     npm: `https://www.npmjs.com/package/${packageName}`,
     description: '',
     version: '',
+    license: '',
     updatedAt: '',
     keywords: [],
     maintainers: [],
@@ -164,6 +169,7 @@ async function fetchNpmPackages() {
       ...repo,
       description: '',
       version: '',
+      license: '',
       updatedAt: '',
       keywords: [],
       maintainers: [],
@@ -256,6 +262,9 @@ const filteredRepos = computed(() => {
       </p>
       <p>
         <a :href="repo.npm" target="_blank" rel="noopener">NPM package</a>
+      </p>
+      <p>
+        <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
       </p>
     </div>
   </div>
