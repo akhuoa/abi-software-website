@@ -240,16 +240,19 @@ const filteredRepos = computed(() => {
 .card {
   width: auto;
   height: 100%;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 8px;
   padding: 1rem;
   text-align: left;
 }
-.search-input {
-  border-color: #ddd;
-}
+.search-input,
 .sort-select {
-  border-color: #ddd;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border-color: #ccc;
+  font-family: inherit;
+  color: inherit;
+  font-size: inherit;
 }
 .search-box,
 .sort-box {
