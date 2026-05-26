@@ -259,7 +259,14 @@ const activeReadmeHtml = computed(() => {
 
 <template>
   <div class="page-header">
-    <h2>NPM Packages</h2>
+    <div>
+      <h2>NPM Packages</h2>
+      <p class="description">
+        The npm packages are fetched from
+        <a href="https://www.npmjs.com/org/abi-software" target="_blank" rel="noopener noreferrer">the npm registry</a>.
+      </p>
+      <p class="package-count">There are currently <strong>{{ repos.length }}</strong> packages in total.</p>
+    </div>
     <div class="toolbar-controls">
       <label class="search-box">
         Search:
@@ -384,7 +391,7 @@ const activeReadmeHtml = computed(() => {
 <style scoped>
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
@@ -395,6 +402,13 @@ const activeReadmeHtml = computed(() => {
     margin: 0;
     color: #646cff;
   }
+
+  .description {
+    color: #888;
+  }
+}
+.package-count {
+  margin-top: 0.5rem;
 }
 .toolbar-controls {
   display: flex;
