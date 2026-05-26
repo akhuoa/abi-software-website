@@ -4,13 +4,17 @@ import PackageDirectory from './components/PackageDirectory.vue'
 
 <template>
   <div class="logo-container">
-    <a href="https://github.com/abi-software" class="logo">
-      <img src="./assets/logo.svg" alt="logo" width="60" height="60" />
-      <h1>ABI Software</h1>
-    </a>
+    <h1>
+      <div class="logo">
+        <img src="./assets/logo.svg" alt="logo" width="60" height="60" />
+        ABI Software
+      </div>
+    </h1>
+    <p>The collection of npm packages, GitHub repositories, and tools
+      developed by <a href="https://github.com/abi-software" target="_blank" rel="noopener noreferrer">ABI-Software</a>.</p>
   </div>
   <PackageDirectory orgName="abi-software" pkgPrefix="@abi-software/" />
-  <div class="read-the-docs">The collection of useful links.</div>
+  <div class="footer">Disclaimer: This is an unofficial, for-fun project.</div>
 </template>
 
 <style scoped>
@@ -26,6 +30,7 @@ import PackageDirectory from './components/PackageDirectory.vue'
   align-items: center;
   text-decoration: none;
   gap: 1rem;
+  font-weight: bold;
 }
 
 .logo img {
@@ -37,14 +42,23 @@ import PackageDirectory from './components/PackageDirectory.vue'
   filter: drop-shadow(0 0 2em #646cffaa);
 }
 
-.logo h1 {
+h1 {
   margin: 0;
   color: #646cff;
 }
 
-.read-the-docs {
+p {
+  color: #888;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.footer {
   color: #888;
   padding: 2rem;
   text-align: center;
+  font-size: 0.9rem;
+  border-top: 1px solid #eee;
+  background-color: #f9f9f9;
 }
 </style>
