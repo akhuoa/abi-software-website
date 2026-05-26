@@ -67,6 +67,7 @@ function openReadme() {
 <template>
   <div class="card">
     <h3>{{ displayName }}</h3>
+    <p v-if="displayName !== repo.name" class="original-package-name">{{ repo.name }}</p>
     <p class="card-meta-line">
       <span><strong>v</strong> {{ repo.version || 'Unknown' }}</span>
       <span class="meta-separator">|</span>
@@ -173,6 +174,13 @@ function openReadme() {
 }
 .card-description {
   margin: 0.75rem 0;
+}
+.original-package-name {
+  margin: -0.25rem 0 0.6rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  letter-spacing: 0.01em;
 }
 .meta-block {
   margin-bottom: 0.75rem;
