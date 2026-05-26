@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 
@@ -23,8 +23,11 @@ type Repo = {
   readme: string
 }
 
+type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
+
 const props = defineProps<{
   repo: Repo
+  installTool: InstallTool
 }>()
 
 const emit = defineEmits<{
@@ -58,6 +61,48 @@ const descriptionMarkdownHTML = computed(() => {
 })
 
 const displayName = computed(() => props.repo.name.replace(/^@[^/]+\//, ''))
+const copied = ref(false)
+
+const installCommand = computed(() => {
+  switch (props.installTool) {
+    case 'pnpm':
+      return `pnpm add ${props.repo.name}`
+    case 'yarn':
+      return `yarn add ${props.repo.name}`
+    case 'bun':
+      return `bun add ${props.repo.name}`
+    case 'npm':
+    default:
+      return `npm i ${props.repo.name}`
+  }
+})
+
+async function copyInstallCommand() {
+  const command = installCommand.value
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(command)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = command
+      textarea.setAttribute('readonly', '')
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 1200)
+  } catch {
+    copied.value = false
+  }
+}
 
 function openReadme() {
   emit('openReadme', props.repo)
@@ -75,6 +120,30 @@ function openReadme() {
     </p>
     <div v-if="repo.description" class="card-description">
       <div class="readme-markdown" v-html="descriptionMarkdownHTML"></div>
+    </div>
+
+    <div class="install-row">
+      <code class="install-command">{{ installCommand }}</code>
+      <button
+        type="button"
+        class="copy-button"
+        :aria-label="copied ? 'Install command copied' : 'Copy install command'"
+        :title="copied ? 'Copied' : 'Copy command'"
+        @click="copyInstallCommand"
+      >
+        <svg v-if="!copied" class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M8 7V3h12v14h-4v4H4V7zm2-2v2h8V5zm-4 4v10h8V9z"
+          />
+        </svg>
+        <svg v-else class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M9.55 18.2 4.9 13.55l1.41-1.41 3.24 3.23 8.14-8.14 1.41 1.42z"
+          />
+        </svg>
+      </button>
     </div>
 
     <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme">
@@ -174,6 +243,47 @@ function openReadme() {
 }
 .card-description {
   margin: 0.75rem 0;
+}
+.install-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.55rem;
+  background: #f6f7f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+.install-command {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace;
+  font-size: 0.82rem;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.copy-button {
+  border: 1px solid #c9ccd2;
+  background: #fff;
+  color: #374151;
+  border-radius: 5px;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.copy-button:hover {
+  border-color: #9aa2af;
+}
+.copy-button-icon {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 .original-package-name {
   margin: -0.25rem 0 0.6rem;

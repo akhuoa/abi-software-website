@@ -26,6 +26,8 @@ type Repo = {
   readme: string
 }
 
+type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
+
 type Maintainer = {
   name?: string
   email?: string
@@ -70,6 +72,7 @@ const props = defineProps<{
 const repos = ref<Repo[]>([])
 const search = ref('')
 const sortBy = ref<'updated' | 'name'>('updated')
+const installTool = ref<InstallTool>('npm')
 const activeReadmeRepo = ref<Repo | null>(null)
 const loading = ref(true)
 const error = ref('')
@@ -260,6 +263,15 @@ const activeReadmeHtml = computed(() => {
           <option value="name">Name</option>
         </select>
       </label>
+      <label class="tool-box">
+        Install with:
+        <select v-model="installTool" name="installTool" class="sort-select">
+          <option value="npm">npm</option>
+          <option value="pnpm">pnpm</option>
+          <option value="yarn">yarn</option>
+          <option value="bun">bun</option>
+        </select>
+      </label>
     </div>
   </div>
 
@@ -271,6 +283,7 @@ const activeReadmeHtml = computed(() => {
       v-for="repo in filteredRepos"
       :key="repo.name"
       :repo="repo"
+      :install-tool="installTool"
       @open-readme="openReadme"
     />
 
@@ -468,7 +481,8 @@ const activeReadmeHtml = computed(() => {
   font-size: inherit;
 }
 .search-box,
-.sort-box {
+.sort-box,
+.tool-box {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
