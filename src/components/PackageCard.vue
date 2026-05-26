@@ -57,6 +57,8 @@ const descriptionMarkdownHTML = computed(() => {
   return DOMPurify.sanitize(markdownRenderer.render(props.repo.description))
 })
 
+const displayName = computed(() => props.repo.name.replace(/^@[^/]+\//, ''))
+
 function openReadme() {
   emit('openReadme', props.repo)
 }
@@ -64,7 +66,7 @@ function openReadme() {
 
 <template>
   <div class="card">
-    <h3>{{ repo.name }}</h3>
+    <h3>{{ displayName }}</h3>
     <p class="card-meta-line">
       <span><strong>v</strong> {{ repo.version || 'Unknown' }}</span>
       <span class="meta-separator">|</span>
