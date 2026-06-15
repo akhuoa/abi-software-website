@@ -235,7 +235,7 @@ function openReadme() {
   display: flex;
   flex-direction: column;
   align-items: start;
-  border: 1px solid #ccc;
+  background: linear-gradient(135deg, #c7c9f426 0%, #646cff3e 100%);
   border-radius: 8px;
   padding: 1rem;
   text-align: left;
@@ -258,6 +258,8 @@ function openReadme() {
 }
 .card-footer {
   margin-top: auto;
+  border-top: 1px solid #fafafa;
+  padding-top: 1.5rem;
 }
 .card-description {
   margin: 0.75rem 0;
