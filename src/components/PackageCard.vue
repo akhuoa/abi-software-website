@@ -111,112 +111,120 @@ function openReadme() {
 
 <template>
   <div class="card">
-    <h3>{{ displayName }}</h3>
-    <p v-if="displayName !== repo.name" class="original-package-name">{{ repo.name }}</p>
-    <p class="card-meta-line">
-      <span><strong>v</strong> {{ repo.version || 'Unknown' }}</span>
-      <span class="meta-separator">|</span>
-      <span><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</span>
-    </p>
-    <div v-if="repo.description" class="card-description">
-      <div class="readme-markdown" v-html="descriptionMarkdownHTML"></div>
+    <div class="card-header">
+      <h3>{{ displayName }}</h3>
+      <p v-if="displayName !== repo.name" class="original-package-name">{{ repo.name }}</p>
+      <p class="card-meta-line">
+        <span><strong>v</strong> {{ repo.version || 'Unknown' }}</span>
+        <span class="meta-separator">|</span>
+        <span><strong>Updated:</strong> {{ formatUpdatedAt(repo.updatedAt) }}</span>
+      </p>
     </div>
 
-    <div class="install-row">
-      <code class="install-command">{{ installCommand }}</code>
-      <button
-        type="button"
-        class="copy-button"
-        :aria-label="copied ? 'Install command copied' : 'Copy install command'"
-        :title="copied ? 'Copied' : 'Copy command'"
-        @click="copyInstallCommand"
-      >
-        <svg v-if="!copied" class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M8 7V3h12v14h-4v4H4V7zm2-2v2h8V5zm-4 4v10h8V9z"
-          />
-        </svg>
-        <svg v-else class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M9.55 18.2 4.9 13.55l1.41-1.41 3.24 3.23 8.14-8.14 1.41 1.42z"
-          />
-        </svg>
+    <div class="card-body">
+      <div v-if="repo.description" class="card-description">
+        <div class="readme-markdown" v-html="descriptionMarkdownHTML"></div>
+      </div>
+
+      <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme">
+        README
       </button>
-    </div>
 
-    <button v-if="repo.readme" class="readme-button" type="button" @click="openReadme">
-      View README
-    </button>
+      <div v-if="repo.keywords.length" class="meta-block">
+        <strong>Keywords:</strong>
+        <div class="keyword-list">
+          <span class="keyword-chip" v-for="keyword in repo.keywords" :key="keyword">{{ keyword }}</span>
+        </div>
+      </div>
 
-    <div v-if="repo.keywords.length" class="meta-block">
-      <strong>Keywords:</strong>
-      <div class="keyword-list">
-        <span class="keyword-chip" v-for="keyword in repo.keywords" :key="keyword">{{ keyword }}</span>
+      <div v-if="repo.maintainers.length" class="meta-block">
+        <strong>Maintainers:</strong>
+        <span class="maintainer-links">
+          <template v-for="(maintainer, index) in repo.maintainers" :key="`${maintainer.name || 'unknown'}-${maintainer.email || ''}`">
+            <a :href="`https://www.npmjs.com/~${maintainer.name || ''}`" target="_blank">{{ maintainer.name || maintainer.email || 'Unknown' }}</a>
+            <span v-if="index < repo.maintainers.length - 1">, </span>
+          </template>
+        </span>
       </div>
     </div>
-    <div v-if="repo.maintainers.length" class="meta-block">
-      <strong>Maintainers:</strong>
-      <span class="maintainer-links">
-        <template v-for="(maintainer, index) in repo.maintainers" :key="`${maintainer.name || 'unknown'}-${maintainer.email || ''}`">
-          <a :href="`https://www.npmjs.com/~${maintainer.name || ''}`" target="_blank">{{ maintainer.name || maintainer.email || 'Unknown' }}</a>
-          <span v-if="index < repo.maintainers.length - 1">, </span>
-        </template>
-      </span>
+
+    <div class="card-footer">
+      <div class="install-row">
+        <code class="install-command">{{ installCommand }}</code>
+        <button
+          type="button"
+          class="copy-button"
+          :aria-label="copied ? 'Install command copied' : 'Copy install command'"
+          :title="copied ? 'Copied' : 'Copy command'"
+          @click="copyInstallCommand"
+        >
+          <svg v-if="!copied" class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 7V3h12v14h-4v4H4V7zm2-2v2h8V5zm-4 4v10h8V9z"
+            />
+          </svg>
+          <svg v-else class="copy-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M9.55 18.2 4.9 13.55l1.41-1.41 3.24 3.23 8.14-8.14 1.41 1.42z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <div class="action-row">
+        <a
+          v-if="repo.url"
+          class="action-button github"
+          :href="repo.url"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.75-1.33-1.75-1.08-.75.08-.74.08-.74 1.2.08 1.83 1.22 1.83 1.22 1.06 1.8 2.79 1.28 3.47.98.11-.76.41-1.28.74-1.57-2.67-.3-5.47-1.32-5.47-5.87 0-1.29.46-2.34 1.22-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.62 11.62 0 0 1 6.01 0c2.3-1.53 3.3-1.21 3.3-1.21.65 1.64.24 2.86.12 3.16.76.83 1.22 1.88 1.22 3.17 0 4.56-2.8 5.57-5.48 5.87.42.36.8 1.08.8 2.18v3.23c0 .32.22.69.82.58A12 12 0 0 0 12 .5Z"
+            />
+          </svg>
+          GitHub
+        </a>
+
+        <a
+          v-if="repo.api"
+          class="action-button api"
+          :href="repo.api"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM8 13h8v1.5H8zm0 3h8v1.5H8zm0-6h5v1.5H8z"
+            />
+          </svg>
+          API Docs
+        </a>
+
+        <a
+          class="action-button npm"
+          :href="repo.npm"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M2 7.5v9h20v-9zm1.5 1.5h17v6h-2.5v-4.5h-4v4.5H9.5v-4.5h-4v4.5H3.5Z"
+            />
+          </svg>
+          NPM
+        </a>
+      </div>
+      <p class="card-meta-line license">
+        <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
+      </p>
     </div>
-
-    <div class="action-row">
-      <a
-        v-if="repo.url"
-        class="action-button github"
-        :href="repo.url"
-        target="_blank"
-        rel="noopener"
-      >
-        <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.75-1.33-1.75-1.08-.75.08-.74.08-.74 1.2.08 1.83 1.22 1.83 1.22 1.06 1.8 2.79 1.28 3.47.98.11-.76.41-1.28.74-1.57-2.67-.3-5.47-1.32-5.47-5.87 0-1.29.46-2.34 1.22-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.62 11.62 0 0 1 6.01 0c2.3-1.53 3.3-1.21 3.3-1.21.65 1.64.24 2.86.12 3.16.76.83 1.22 1.88 1.22 3.17 0 4.56-2.8 5.57-5.48 5.87.42.36.8 1.08.8 2.18v3.23c0 .32.22.69.82.58A12 12 0 0 0 12 .5Z"
-          />
-        </svg>
-        GitHub
-      </a>
-
-      <a
-        v-if="repo.api"
-        class="action-button api"
-        :href="repo.api"
-        target="_blank"
-        rel="noopener"
-      >
-        <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM8 13h8v1.5H8zm0 3h8v1.5H8zm0-6h5v1.5H8z"
-          />
-        </svg>
-        API Docs
-      </a>
-
-      <a
-        class="action-button npm"
-        :href="repo.npm"
-        target="_blank"
-        rel="noopener"
-      >
-        <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M2 7.5v9h20v-9zm1.5 1.5h17v6h-2.5v-4.5h-4v4.5H9.5v-4.5h-4v4.5H3.5Z"
-          />
-        </svg>
-        NPM
-      </a>
-    </div>
-    <p class="card-meta-line license">
-      <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
-    </p>
   </div>
 </template>
 
@@ -232,14 +240,24 @@ function openReadme() {
   padding: 1rem;
   text-align: left;
   overflow: hidden;
+  gap: 1rem;
 
   h3 {
     margin-top: 0;
+    margin-bottom: 0.25rem;
   }
 
   p {
     margin: 0;
   }
+}
+.card-header,
+.card-body,
+.card-footer {
+  width: 100%;
+}
+.card-footer {
+  margin-top: auto;
 }
 .card-description {
   margin: 0.75rem 0;

@@ -335,8 +335,8 @@ const activeReadmeHtml = computed(() => {
 }
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 2rem;
   padding: 2rem;
 }
 .lightbox {
