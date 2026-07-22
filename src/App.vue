@@ -20,7 +20,6 @@ import PackageDirectory from './components/PackageDirectory.vue'
 <style scoped>
 .logo-container {
   padding: 2rem;
-  margin-bottom: 2rem;
   text-align: center;
   background-color: #646cff26;
 }

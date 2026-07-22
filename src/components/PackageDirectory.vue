@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import data from '../data.json'
 import PackageCard from './PackageCard.vue'
+import { NPM_REGISTRY_URL, NPM_PACKAGE_URL } from '../constants/apis'
 
 const markdownRenderer = new MarkdownIt({
   html: false,
@@ -69,6 +70,8 @@ const props = defineProps<{
   pkgPrefix?: string
 }>()
 
+const proxyBase = import.meta.env.VITE_CORS_API
+
 const repos = ref<Repo[]>([])
 const search = ref('')
 const sortBy = ref<'updated' | 'name'>('updated')
@@ -99,7 +102,7 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     url: extra?.url || repoUrl || '',
     api: extra?.api || '',
     demo: extra?.demo || '',
-    npm: `https://www.npmjs.com/package/${packageName}`,
+    npm: `${NPM_PACKAGE_URL}/${packageName}`,
     description: cleanDescription(packageInfo.description || ''),
     version: latestVersion || packageInfo.version || '',
     license: packageInfo.license || pkg.license || '',
@@ -116,7 +119,7 @@ function buildFallbackRepo(packageName: string): Repo {
     url: '',
     api: '',
     demo: '',
-    npm: `https://www.npmjs.com/package/${packageName}`,
+    npm: `${NPM_PACKAGE_URL}/${packageName}`,
     description: '',
     version: '',
     license: '',
@@ -161,25 +164,50 @@ function cleanDescription(rawDescription: string) {
   return cleaned.trim()
 }
 
+// WIP: Fetch dependent data from deps.dev API
+// async function fetchDependentData(packageName: string, latestVersion: string): Promise<Record<string, string>> {
+//   const encodedPackageName = encodeURIComponent(packageName)
+//   const metadataAPIUrl = `https://api.deps.dev/v3alpha/systems/npm/packages/${encodedPackageName}`
+//                         + `/versions/${latestVersion}:dependents`
+//   const metaProxyUrl = proxyBase + '?target=' + metadataAPIUrl
+//   try {
+//     const metaRes = await fetch(metaProxyUrl)
+//     if (!metaRes.ok) throw new Error('meta fetch failed')
+//     const meta = await metaRes.json()
+//     console.log(`Fetched dependent data for ${packageName}`, meta)
+//   } catch {
+//     return {}
+//   }
+// }
+
 async function fetchNpmPackages() {
   loading.value = true
   error.value = ''
+
+  if (!proxyBase) {
+    error.value = 'CORS proxy URL is not defined. Please set VITE_CORS_API in your .env file.'
+    loading.value = false
+    return
+  }
+
   try {
-    const npmApiUrl = `https://registry.npmjs.org/-/org/${props.orgName}/package`
-    const proxyBase = 'https://pmrapp-api-proxy.akya984.workers.dev/cors-proxy?' // to resolve CORS issues
-    const proxyUrl = proxyBase + 'target=' + encodeURIComponent(npmApiUrl)
+    const npmApiUrl = `${NPM_REGISTRY_URL}/-/org/${props.orgName}/package`
+    const proxyUrl = proxyBase + '?target=' + encodeURIComponent(npmApiUrl)
     const res = await fetch(proxyUrl)
     if (!res.ok) throw new Error('Failed to fetch from npmjs')
     const json = await res.json()
     const packageNames = Object.keys(json)
     // Fetch metadata for each package
     const metaPromises = packageNames.map(async (packageName) => {
-      const metadataAPIUrl = `https://registry.npmjs.org/${packageName}`
-      const metaProxyUrl = proxyBase + 'target=' + encodeURIComponent(metadataAPIUrl)
+      const metadataAPIUrl = `${NPM_REGISTRY_URL}/${packageName}`
+      const metaProxyUrl = proxyBase + '?target=' + encodeURIComponent(metadataAPIUrl)
       try {
         const metaRes = await fetch(metaProxyUrl)
         if (!metaRes.ok) throw new Error('meta fetch failed')
         const meta = await metaRes.json() as NpmPackageMetadata
+        // WIP: Fetch dependent data from deps.dev API
+        // const latestVersion = meta['dist-tags']?.latest || ''
+        // await fetchDependentData(packageName, latestVersion)
         return mapNpmPackage(meta)
       } catch {
         // fallback to minimal info if metadata fetch fails
@@ -188,6 +216,7 @@ async function fetchNpmPackages() {
     })
     repos.value = await Promise.all(metaPromises)
   } catch (e) {
+    console.error('Error fetching npm packages:', e)
     const err = e as Error
     error.value = err.message || 'Unknown error'
     // fallback to data.json if fetch fails
@@ -200,7 +229,7 @@ async function fetchNpmPackages() {
       keywords: [],
       maintainers: [],
       readme: '',
-      npm: `https://www.npmjs.com/package/${repo.name}`,
+      npm: `${NPM_PACKAGE_URL}/${repo.name}`,
     }))
   } finally {
     loading.value = false
@@ -312,8 +341,7 @@ const activeReadmeHtml = computed(() => {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  padding-left: 2rem;
-  padding-right: 2rem;
+  padding: 2rem;
 
   h2 {
     margin: 0;
