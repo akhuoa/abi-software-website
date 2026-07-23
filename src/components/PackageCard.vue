@@ -83,13 +83,63 @@ const installCommand = computed(() => {
 
 const devPackageManager = computed(() => props.repo.packageManager || 'Unknown')
 
-const devScripts = computed(() => {
-  const preferredOrder = ['dev', 'start', 'build', 'test', 'lint', 'typecheck']
-  const scriptNames = Object.keys(props.repo.scripts || {})
-  const prioritized = preferredOrder.filter((scriptName) => scriptNames.includes(scriptName))
-  const remaining = scriptNames.filter((scriptName) => !preferredOrder.includes(scriptName)).slice(0, 4)
+const devScriptItems = computed(() => {
+  const scripts = props.repo.scripts || {}
+  const items: { label: string; command: string; scriptValue: string }[] = []
+  const usedNames = new Set<string>()
 
-  return [...prioritized, ...remaining]
+  const addIfFound = (label: string, names: string[], valueFilter?: (value: string) => boolean) => {
+    for (const name of names) {
+      if (scripts[name] !== undefined && !usedNames.has(name)) {
+        const val = scripts[name].toLowerCase()
+        if (valueFilter && !valueFilter(val)) continue
+        usedNames.add(name)
+        items.push({
+          label,
+          command: formatScriptCommand(name),
+          scriptValue: scripts[name],
+        })
+        return true
+      }
+    }
+    return false
+  }
+
+  // Dev run: prefer dev > serve > start, but value must not be build+preview
+  addIfFound('dev run', ['dev', 'serve', 'start'], (val) => !(val.includes('build') && val.includes('preview')))
+
+  // Build
+  addIfFound('build', ['build'])
+
+  // Preview: check by name first, then any script with build+preview value
+  if (!addIfFound('preview', ['preview'])) {
+    for (const [name, value] of Object.entries(scripts)) {
+      if (usedNames.has(name)) continue
+      const val = value.toLowerCase()
+      if (val.includes('build') && val.includes('preview')) {
+        usedNames.add(name)
+        items.push({
+          label: 'preview',
+          command: formatScriptCommand(name),
+          scriptValue: value,
+        })
+        break
+      }
+    }
+  }
+
+  // Test (unit)
+  addIfFound('test (unit)', ['test:unit', 'test.unit', 'test'], (val) =>
+    !val.includes('e2e') && !val.includes('cypress') && !val.includes('playwright'),
+  )
+
+  // Test (e2e)
+  addIfFound('test (e2e)', ['test:e2e', 'test.e2e', 'e2e'])
+
+  // Lint
+  addIfFound('lint', ['lint'])
+
+  return items
 })
 
 function formatScriptCommand(scriptName: string) {
@@ -186,8 +236,11 @@ function openReadme() {
           <p class="dev-row"><span class="dev-label">Framework:</span> {{ repo.framework || 'Unknown' }}</p>
           <div class="dev-row scripts">
             <span class="dev-label">Scripts:</span>
-            <div v-if="devScripts.length" class="script-list">
-              <code v-for="script in devScripts" :key="script">{{ formatScriptCommand(script) }}</code>
+            <div v-if="devScriptItems.length" class="script-list">
+              <div v-for="item in devScriptItems" :key="item.label" class="script-item" :title="item.scriptValue">
+                <span class="script-label">{{ item.label }}:</span>
+                <code>{{ item.command }}</code>
+              </div>
             </div>
             <span v-else>Unknown</span>
           </div>
@@ -339,10 +392,20 @@ function openReadme() {
 }
 .script-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
+  flex-direction: column;
+  gap: 0.2rem;
 }
-.script-list code {
+.script-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: default;
+}
+.script-label {
+  font-size: 0.86rem;
+  color: #6b7280;
+}
+.script-item code {
   font-size: 0.78rem;
   background: #f3f4f6;
   border: 1px solid #e5e7eb;
