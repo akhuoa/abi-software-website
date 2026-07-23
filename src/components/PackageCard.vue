@@ -25,6 +25,7 @@ type Repo = {
   scripts: Record<string, string>
   language: string
   framework: string
+  testFramework: string
 }
 
 type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
@@ -128,13 +129,72 @@ const devScriptItems = computed(() => {
     }
   }
 
-  // Test (unit)
-  addIfFound('test (unit)', ['test:unit', 'test.unit', 'test'], (val) =>
-    !val.includes('e2e') && !val.includes('cypress') && !val.includes('playwright'),
-  )
+  // Test scripts — collect all matching entries
+  const testEntries: { label: string; name: string; value: string }[] = []
 
-  // Test (e2e)
-  addIfFound('test (e2e)', ['test:e2e', 'test.e2e', 'e2e'])
+  const addTestEntry = (name: string, label: string) => {
+    if (scripts[name] !== undefined && !usedNames.has(name)) {
+      usedNames.add(name)
+      testEntries.push({ label, name, value: scripts[name] })
+      return true
+    }
+    return false
+  }
+
+  // Named unit test patterns
+  addTestEntry('test:unit', 'test (unit)')
+  addTestEntry('test.unit', 'test (unit)')
+
+  // Plain `test` — only if its value isn't e2e/cypress/playwright
+  if (!usedNames.has('test') && scripts.test !== undefined) {
+    const val = scripts.test.toLowerCase()
+    if (!val.includes('e2e') && !val.includes('cypress') && !val.includes('playwright')) {
+      addTestEntry('test', 'test (unit)')
+    }
+  }
+
+  // Named e2e patterns
+  addTestEntry('test:e2e', 'test (e2e)')
+  addTestEntry('test.e2e', 'test (e2e)')
+  addTestEntry('e2e', 'test (e2e)')
+
+  // Scripts with --component flag (prefer name containing "component")
+  const componentCandidates = Object.entries(scripts).filter(
+    ([n, v]) => !usedNames.has(n) && v.includes('--component'),
+  )
+  const bestComponent = componentCandidates.find(([n]) => n.includes('component')) || componentCandidates[0]
+  if (bestComponent) {
+    usedNames.add(bestComponent[0])
+    testEntries.push({ label: 'test (unit)', name: bestComponent[0], value: bestComponent[1] })
+  }
+
+  // Scripts with --e2e flag (prefer name containing "e2e")
+  const e2eCandidates = Object.entries(scripts).filter(
+    ([n, v]) => !usedNames.has(n) && v.includes('--e2e'),
+  )
+  const bestE2e = e2eCandidates.find(([n]) => n.includes('e2e')) || e2eCandidates[0]
+  if (bestE2e) {
+    usedNames.add(bestE2e[0])
+    testEntries.push({ label: 'test (e2e)', name: bestE2e[0], value: bestE2e[1] })
+  }
+
+  // Any remaining script whose name starts with "test" — map to "test (unit)"
+  for (const [name, value] of Object.entries(scripts)) {
+    if (usedNames.has(name)) continue
+    if (name.toLowerCase().startsWith('test')) {
+      usedNames.add(name)
+      testEntries.push({ label: 'test (unit)', name, value })
+    }
+  }
+
+  // Push all collected test entries
+  for (const entry of testEntries) {
+    items.push({
+      label: entry.label,
+      command: formatScriptCommand(entry.name),
+      scriptValue: entry.value,
+    })
+  }
 
   // Lint
   addIfFound('lint', ['lint'])
@@ -234,6 +294,7 @@ function openReadme() {
           <p class="dev-row"><span class="dev-label">Package manager:</span> <code>{{ devPackageManager }}</code></p>
           <p class="dev-row"><span class="dev-label">Language:</span> {{ repo.language || 'Unknown' }}</p>
           <p class="dev-row"><span class="dev-label">Framework:</span> {{ repo.framework || 'Unknown' }}</p>
+          <p class="dev-row"><span class="dev-label">Test framework:</span> {{ repo.testFramework || 'Unknown' }}</p>
           <div class="dev-row scripts">
             <span class="dev-label">Scripts:</span>
             <div v-if="devScriptItems.length" class="script-list">

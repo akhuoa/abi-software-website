@@ -29,6 +29,7 @@ type Repo = {
   scripts: Record<string, string>
   language: string
   framework: string
+  testFramework: string
 }
 
 type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
@@ -151,6 +152,48 @@ function inferLanguage(pkg: NpmPackageVersion): string {
   return 'JavaScript'
 }
 
+function inferTestFramework(pkg: NpmPackageVersion): string {
+  const deps = {
+    ...(pkg.dependencies || {}),
+    ...(pkg.devDependencies || {}),
+    ...(pkg.peerDependencies || {}),
+  }
+
+  // Check devDependencies/dependencies first (most reliable)
+  if (deps.vitest) return 'Vitest'
+  if (deps.cypress) return 'Cypress'
+  if (deps.jest) return 'Jest'
+  if (deps.mocha) return 'Mocha'
+  if (deps['@playwright/test'] || deps.playwright) return 'Playwright'
+  if (deps.jasmine) return 'Jasmine'
+  if (deps.karma) return 'Karma'
+  if (deps.ava) return 'Ava'
+  if (deps.tape) return 'Tape'
+  if (deps.qunit || deps.qunitjs) return 'QUnit'
+  if (deps['@testing-library/vue']) return 'Testing Library (Vue)'
+  if (deps['@testing-library/react']) return 'Testing Library (React)'
+
+  // Fallback: check script keys and commands for common test framework names
+  const scriptText = Object.entries(pkg.scripts || {})
+    .map(([key, value]) => `${key} ${value}`)
+    .join(' ')
+    .toLowerCase()
+
+  // Order matters: check more specific patterns first
+  if (/\bvitest\b/.test(scriptText)) return 'Vitest'
+  if (/\bcypress\b/.test(scriptText)) return 'Cypress'
+  if (/\bjest\b/.test(scriptText)) return 'Jest'
+  if (/\bplaywright\b/.test(scriptText)) return 'Playwright'
+  if (/\bmocha\b/.test(scriptText)) return 'Mocha'
+  if (/\bjasmine\b/.test(scriptText)) return 'Jasmine'
+  if (/\bkarma\b/.test(scriptText)) return 'Karma'
+  if (/\bava\b/.test(scriptText)) return 'Ava'
+  if (/\btape\b/.test(scriptText)) return 'Tape'
+  if (/\bqunit\b/.test(scriptText)) return 'QUnit'
+
+  return 'Unknown'
+}
+
 // Helper: Map npm package to repo info, fallback to data.json for extra fields
 function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
   const latestVersion = pkg['dist-tags']?.latest
@@ -185,6 +228,7 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     scripts: packageInfo.scripts || {},
     language: inferLanguage(packageInfo),
     framework: inferFramework(packageInfo),
+    testFramework: inferTestFramework(packageInfo),
   }
 }
 
@@ -206,6 +250,7 @@ function buildFallbackRepo(packageName: string): Repo {
     scripts: {},
     language: 'JavaScript',
     framework: 'Unknown',
+    testFramework: 'Unknown',
   }
 }
 
@@ -314,6 +359,7 @@ async function fetchNpmPackages() {
       scripts: {},
       language: 'JavaScript',
       framework: 'Unknown',
+      testFramework: 'Unknown',
     }))
   } finally {
     loading.value = false
