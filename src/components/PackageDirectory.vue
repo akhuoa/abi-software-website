@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import data from '../data.json'
 import PackageCard from './PackageCard.vue'
+import LoadingPackages from './LoadingPackages.vue'
 import { NPM_REGISTRY_URL, NPM_PACKAGE_URL } from '../constants/apis'
 
 const markdownRenderer = new MarkdownIt({
@@ -455,7 +456,7 @@ const activeReadmeHtml = computed(() => {
     </div>
   </div>
 
-  <div v-if="loading" class="loading">Loading packages...</div>
+  <LoadingPackages v-if="loading" />
   <div v-else-if="error" class="error">{{ error }}</div>
 
   <div class="cards-container">
