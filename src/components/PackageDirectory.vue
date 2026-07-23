@@ -159,39 +159,56 @@ function inferTestFramework(pkg: NpmPackageVersion): string {
     ...(pkg.peerDependencies || {}),
   }
 
-  // Check devDependencies/dependencies first (most reliable)
-  if (deps.vitest) return 'Vitest'
-  if (deps.cypress) return 'Cypress'
-  if (deps.jest) return 'Jest'
-  if (deps.mocha) return 'Mocha'
-  if (deps['@playwright/test'] || deps.playwright) return 'Playwright'
-  if (deps.jasmine) return 'Jasmine'
-  if (deps.karma) return 'Karma'
-  if (deps.ava) return 'Ava'
-  if (deps.tape) return 'Tape'
-  if (deps.qunit || deps.qunitjs) return 'QUnit'
-  if (deps['@testing-library/vue']) return 'Testing Library (Vue)'
-  if (deps['@testing-library/react']) return 'Testing Library (React)'
+  const found = new Set<string>()
 
-  // Fallback: check script keys and commands for common test framework names
+  // Check devDependencies/dependencies first (most reliable)
+  const depChecks: [string, string][] = [
+    ['vitest', 'Vitest'],
+    ['cypress', 'Cypress'],
+    ['jest', 'Jest'],
+    ['mocha', 'Mocha'],
+    ['@playwright/test', 'Playwright'],
+    ['playwright', 'Playwright'],
+    ['jasmine', 'Jasmine'],
+    ['karma', 'Karma'],
+    ['ava', 'Ava'],
+    ['tape', 'Tape'],
+    ['qunit', 'QUnit'],
+    ['qunitjs', 'QUnit'],
+    ['@testing-library/vue', 'Testing Library (Vue)'],
+    ['@testing-library/react', 'Testing Library (React)'],
+  ]
+
+  for (const [depName, label] of depChecks) {
+    if (deps[depName]) found.add(label)
+  }
+
+  // Also check script keys and commands for common test framework names
   const scriptText = Object.entries(pkg.scripts || {})
     .map(([key, value]) => `${key} ${value}`)
     .join(' ')
     .toLowerCase()
 
-  // Order matters: check more specific patterns first
-  if (/\bvitest\b/.test(scriptText)) return 'Vitest'
-  if (/\bcypress\b/.test(scriptText)) return 'Cypress'
-  if (/\bjest\b/.test(scriptText)) return 'Jest'
-  if (/\bplaywright\b/.test(scriptText)) return 'Playwright'
-  if (/\bmocha\b/.test(scriptText)) return 'Mocha'
-  if (/\bjasmine\b/.test(scriptText)) return 'Jasmine'
-  if (/\bkarma\b/.test(scriptText)) return 'Karma'
-  if (/\bava\b/.test(scriptText)) return 'Ava'
-  if (/\btape\b/.test(scriptText)) return 'Tape'
-  if (/\bqunit\b/.test(scriptText)) return 'QUnit'
+  const scriptChecks: [RegExp, string][] = [
+    [/\bvitest\b/, 'Vitest'],
+    [/\bcypress\b/, 'Cypress'],
+    [/\bjest\b/, 'Jest'],
+    [/\bplaywright\b/, 'Playwright'],
+    [/\bmocha\b/, 'Mocha'],
+    [/\bjasmine\b/, 'Jasmine'],
+    [/\bkarma\b/, 'Karma'],
+    [/\bava\b/, 'Ava'],
+    [/\btape\b/, 'Tape'],
+    [/\bqunit\b/, 'QUnit'],
+  ]
 
-  return 'Unknown'
+  for (const [re, label] of scriptChecks) {
+    if (re.test(scriptText)) found.add(label)
+  }
+
+  if (found.size === 0) return 'Unknown'
+
+  return [...found].join(', ')
 }
 
 // Helper: Map npm package to repo info, fallback to data.json for extra fields
