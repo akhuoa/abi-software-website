@@ -492,7 +492,8 @@ function openReadme() {
   margin-left: 0.35rem;
 }
 .readme-button {
-  border: 1px solid #646cff;
+  display: inline-flex;
+  width: fit-content;
   color: #646cff;
   background: #fff;
   border-radius: 6px;
