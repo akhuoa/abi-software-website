@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import data from '../data.json'
@@ -25,6 +25,10 @@ type Repo = {
   keywords: string[]
   maintainers: Maintainer[]
   readme: string
+  packageManager: string
+  scripts: Record<string, string>
+  language: string
+  framework: string
 }
 
 type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
@@ -42,6 +46,13 @@ type NpmPackageVersion = {
   keywords?: string[]
   maintainers?: Maintainer[]
   readme?: string
+  packageManager?: string
+  scripts?: Record<string, string>
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+  types?: string
+  typings?: string
   links?: {
     repository?: string
   }
@@ -56,6 +67,7 @@ type NpmPackageMetadata = {
   keywords?: string[]
   maintainers?: Maintainer[]
   readme?: string
+  packageManager?: string
   time?: {
     modified?: string
   }
@@ -79,6 +91,65 @@ const installTool = ref<InstallTool>('npm')
 const activeReadmeRepo = ref<Repo | null>(null)
 const loading = ref(true)
 const error = ref('')
+
+function inferPackageManager(pkg: NpmPackageVersion, rootPkg: NpmPackageMetadata): string {
+  const packageManagerValue = (pkg.packageManager || rootPkg.packageManager || '').toLowerCase()
+
+  if (packageManagerValue.startsWith('pnpm')) return 'pnpm'
+  if (packageManagerValue.startsWith('yarn')) return 'yarn'
+  if (packageManagerValue.startsWith('bun')) return 'bun'
+  if (packageManagerValue.startsWith('npm')) return 'npm'
+
+  const scriptText = Object.values(pkg.scripts || {}).join(' ').toLowerCase()
+  if (/\bpnpm\b/.test(scriptText)) return 'pnpm'
+  if (/\byarn\b/.test(scriptText)) return 'yarn'
+  if (/\bbun\b/.test(scriptText)) return 'bun'
+
+  return 'npm'
+}
+
+function inferFramework(pkg: NpmPackageVersion): string {
+  const deps = {
+    ...(pkg.dependencies || {}),
+    ...(pkg.devDependencies || {}),
+    ...(pkg.peerDependencies || {}),
+  }
+
+  if (deps.vue || deps.nuxt || deps['@vue/runtime-core']) return 'Vue'
+  if (deps.react || deps['react-dom'] || deps.next) return 'React'
+  if (deps['@angular/core']) return 'Angular'
+  if (deps.svelte || deps['@sveltejs/kit']) return 'Svelte'
+  if (deps['solid-js']) return 'Solid'
+  if (deps.preact) return 'Preact'
+
+  return 'Unknown'
+}
+
+function inferLanguage(pkg: NpmPackageVersion): string {
+  const deps = {
+    ...(pkg.dependencies || {}),
+    ...(pkg.devDependencies || {}),
+    ...(pkg.peerDependencies || {}),
+  }
+
+  const scriptText = Object.values(pkg.scripts || {}).join(' ').toLowerCase()
+  const hasTypeScriptSignals = Boolean(
+    pkg.types
+      || pkg.typings
+      || deps.typescript
+      || deps['ts-node']
+      || deps.tsx
+      || deps.tsup
+      || scriptText.includes('tsc')
+      || scriptText.includes('typescript')
+  )
+
+  if (hasTypeScriptSignals) {
+    return 'TypeScript'
+  }
+
+  return 'JavaScript'
+}
 
 // Helper: Map npm package to repo info, fallback to data.json for extra fields
 function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
@@ -110,6 +181,10 @@ function mapNpmPackage(pkg: NpmPackageMetadata): Repo {
     keywords: packageInfo.keywords || pkg.keywords || [],
     maintainers: packageInfo.maintainers || pkg.maintainers || [],
     readme: packageInfo.readme || pkg.readme || '',
+    packageManager: inferPackageManager(packageInfo, pkg),
+    scripts: packageInfo.scripts || {},
+    language: inferLanguage(packageInfo),
+    framework: inferFramework(packageInfo),
   }
 }
 
@@ -127,6 +202,10 @@ function buildFallbackRepo(packageName: string): Repo {
     keywords: [],
     maintainers: [],
     readme: '',
+    packageManager: 'npm',
+    scripts: {},
+    language: 'JavaScript',
+    framework: 'Unknown',
   }
 }
 
@@ -208,6 +287,7 @@ async function fetchNpmPackages() {
         // WIP: Fetch dependent data from deps.dev API
         // const latestVersion = meta['dist-tags']?.latest || ''
         // await fetchDependentData(packageName, latestVersion)
+        console.log('meta', meta)
         return mapNpmPackage(meta)
       } catch {
         // fallback to minimal info if metadata fetch fails
@@ -230,6 +310,10 @@ async function fetchNpmPackages() {
       maintainers: [],
       readme: '',
       npm: `${NPM_PACKAGE_URL}/${repo.name}`,
+      packageManager: 'npm',
+      scripts: {},
+      language: 'JavaScript',
+      framework: 'Unknown',
     }))
   } finally {
     loading.value = false
@@ -260,6 +344,10 @@ const filteredRepos = computed(() => {
     return left.name.localeCompare(right.name)
   })
 })
+
+watch(filteredRepos, (reposList) => {
+  console.log('filteredRepos', reposList)
+}, { immediate: true })
 
 const activeReadmeHtml = computed(() => {
   if (!activeReadmeRepo.value?.readme) {

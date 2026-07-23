@@ -21,6 +21,10 @@ type Repo = {
   keywords: string[]
   maintainers: Maintainer[]
   readme: string
+  packageManager: string
+  scripts: Record<string, string>
+  language: string
+  framework: string
 }
 
 type InstallTool = 'npm' | 'pnpm' | 'yarn' | 'bun'
@@ -76,6 +80,33 @@ const installCommand = computed(() => {
       return `npm i ${props.repo.name}`
   }
 })
+
+const devPackageManager = computed(() => props.repo.packageManager || 'Unknown')
+
+const devScripts = computed(() => {
+  const preferredOrder = ['dev', 'start', 'build', 'test', 'lint', 'typecheck']
+  const scriptNames = Object.keys(props.repo.scripts || {})
+  const prioritized = preferredOrder.filter((scriptName) => scriptNames.includes(scriptName))
+  const remaining = scriptNames.filter((scriptName) => !preferredOrder.includes(scriptName)).slice(0, 4)
+
+  return [...prioritized, ...remaining]
+})
+
+function formatScriptCommand(scriptName: string) {
+  const manager = (props.repo.packageManager || '').toLowerCase()
+
+  switch (manager) {
+    case 'yarn':
+      return `yarn ${scriptName}`
+    case 'pnpm':
+      return `pnpm ${scriptName}`
+    case 'bun':
+      return `bun run ${scriptName}`
+    case 'npm':
+    default:
+      return `npm run ${scriptName}`
+  }
+}
 
 async function copyInstallCommand() {
   const command = installCommand.value
@@ -145,6 +176,22 @@ function openReadme() {
             <span v-if="index < repo.maintainers.length - 1">, </span>
           </template>
         </span>
+      </div>
+
+      <div class="dev-block">
+        <strong>Development</strong>
+        <div class="dev-list">
+          <p class="dev-row"><span class="dev-label">Package manager:</span> <code>{{ devPackageManager }}</code></p>
+          <p class="dev-row"><span class="dev-label">Language:</span> {{ repo.language || 'Unknown' }}</p>
+          <p class="dev-row"><span class="dev-label">Framework:</span> {{ repo.framework || 'Unknown' }}</p>
+          <div class="dev-row scripts">
+            <span class="dev-label">Scripts:</span>
+            <div v-if="devScripts.length" class="script-list">
+              <code v-for="script in devScripts" :key="script">{{ formatScriptCommand(script) }}</code>
+            </div>
+            <span v-else>Unknown</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -221,6 +268,7 @@ function openReadme() {
           NPM
         </a>
       </div>
+
       <p class="card-meta-line license">
         <span><strong>License:</strong> {{ repo.license || 'Unknown' }}</span>
       </p>
@@ -256,6 +304,11 @@ function openReadme() {
 .card-footer {
   width: 100%;
 }
+.card-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 .card-footer {
   margin-top: auto;
   border-top: 1px solid #fafafa;
@@ -263,6 +316,39 @@ function openReadme() {
 }
 .card-description {
   margin: 0.75rem 0;
+}
+.dev-block {
+  margin-top: auto;
+}
+.dev-list {
+  margin-top: 0.4rem;
+}
+.dev-row {
+  margin: 0.2rem 0;
+  font-size: 0.86rem;
+  color: #4b5563;
+}
+.dev-row.scripts {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.dev-label {
+  color: #374151;
+  font-weight: 600;
+}
+.script-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.script-list code {
+  font-size: 0.78rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  color: #1f2937;
 }
 .install-row {
   width: 100%;
